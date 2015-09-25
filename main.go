@@ -12,27 +12,6 @@ import (
 	"strings"
 )
 
-type taskCommandLine []string
-
-func (s *taskCommandLine) Set(value string) error {
-	*s = append(*s, value)
-	return nil
-}
-
-func (s *taskCommandLine) String() string {
-	return ""
-}
-
-func (s *taskCommandLine) IsCumulative() bool {
-	return true
-}
-
-func getTaskCmd(s kingpin.Settings) (target *[]string) {
-	target = new([]string)
-	s.SetValue((*taskCommandLine)(target))
-	return
-}
-
 func main() {
 	runCountHelp := "number of parallel executions - if your application is asynchronous, the default of 1 is safe"
 	runCount := kingpin.Flag("count", runCountHelp).Default("1").Short('c').Int()
@@ -75,8 +54,4 @@ func main() {
 	r.DELETE("/*path", Shuffler)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *bindTo, *portNum), r))
-}
-
-func Shuffler(_ http.ResponseWriter, _ *http.Request, p httprouter.Params) {
-	fmt.Printf("[child 1, 200ms] %v\n", p.ByName("path"))
 }
