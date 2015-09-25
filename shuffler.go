@@ -9,11 +9,6 @@ import (
 	"time"
 )
 
-// pulled from https://gist.github.com/DavidVaini/10308388#gistcomment-1391788
-func round(f float64) int {
-	return int(math.Floor(f + .5))
-}
-
 func nextRunner() int {
 	if config.taskSwitch == TSM_RANDOMIZED {
 		return round(rand.Float64() * float64(len(config.tasks)))

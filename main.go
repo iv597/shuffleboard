@@ -33,7 +33,7 @@ func main() {
 
 	taskAddress := kingpin.Flag("taskAddress", "address the spawned tasks are listening on").Default("localhost").Short('a').String()
 
-	tsrHelp := fmt.Sprintf("logic to use for selecting which spawned process should receive the request: %d for sequential, %d for random (NOT IMPLEMENTED)", int(TSM_SEQUENTIAL), int(TSM_RANDOMIZED))
+	tsrHelp := fmt.Sprintf("logic to use for selecting which spawned process should receive the request: %d for sequential (NOT IMPLEMENTED), %d for random", int(TSM_SEQUENTIAL), int(TSM_RANDOMIZED))
 	taskSwitchRaw := kingpin.Flag("taskSwitchLogic", tsrHelp).Default(TSM_RANDOMIZED.String()).Short('s').Int()
 
 	minWait := kingpin.Flag("minWait", "the shortest (in ms) a request should be delayed").Default("0").Short('w').Int()
