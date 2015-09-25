@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"github.com/julienschmidt/httprouter"
 	"gopkg.in/alecthomas/kingpin.v2"
+	//"io"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	//"io"
-	//"net/http"
 )
 
 type taskCommandLine []string
@@ -42,7 +43,7 @@ func main() {
 
 	task := getTaskCmd(kingpin.Arg("command", "task to shuffle"))
 
-	kingpin.Version("0.0.0")
+	kingpin.Version("0.0.0.0")
 	kingpin.Parse()
 
 	taskPorts := []int{}
@@ -62,5 +63,20 @@ func main() {
 		}
 	}
 
-	fmt.Printf("%v%v%v%v  %v", *runCount, *bindTo, *portNum, taskPorts, *task)
+	fmt.Printf("%v%v%v%v  %v\n", *runCount, *bindTo, *portNum, taskPorts, *task)
+
+	r := httprouter.New()
+	r.GET("/*path", Shuffler)
+	r.HEAD("/*path", Shuffler)
+	r.OPTIONS("/*path", Shuffler)
+	r.POST("/*path", Shuffler)
+	r.PUT("/*path", Shuffler)
+	r.PATCH("/*path", Shuffler)
+	r.DELETE("/*path", Shuffler)
+
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *bindTo, *portNum), r))
+}
+
+func Shuffler(_ http.ResponseWriter, _ *http.Request, p httprouter.Params) {
+	fmt.Printf("[child 1, 200ms] %v\n", p.ByName("path"))
 }
