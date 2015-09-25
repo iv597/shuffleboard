@@ -57,6 +57,12 @@ func Shuffler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		panic(fmt.Sprintf("Error making request: %v", err))
 	}
 
+	for key, val := range resp.Header {
+		w.Header().Set(key, val[0])
+	}
+
+	w.WriteHeader(resp.StatusCode)
+
 	defer resp.Body.Close()
 
 	io.Copy(w, resp.Body)
