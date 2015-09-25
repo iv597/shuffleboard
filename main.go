@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"gopkg.in/alecthomas/kingpin.v2"
-	//"io"
 	"log"
 	"net/http"
 	"os"
