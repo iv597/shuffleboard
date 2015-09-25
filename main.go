@@ -10,24 +10,80 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
+
+type TaskSwitchMethod int
+
+func (t TaskSwitchMethod) String() string {
+	return fmt.Sprintf("%d", int(t))
+}
+
+const (
+	TSM_SEQUENTIAL TaskSwitchMethod = iota
+	TSM_RANDOMIZED
+)
+
+type Config struct {
+	taskSwitch TaskSwitchMethod
+	tasks      []TaskRunner
+	http       HttpConfig
+}
+
+type TaskRunner struct {
+	port    int
+	command taskCommandLine
+	minWait time.Duration
+	maxWait time.Duration
+}
+
+type HttpConfig struct {
+	address string
+	port    int
+}
+
+var config Config
 
 func main() {
 	runCountHelp := "number of parallel executions - if your application is asynchronous, the default of 1 is safe"
 	runCount := kingpin.Flag("count", runCountHelp).Default("1").Short('c').Int()
+
 	bindTo := kingpin.Flag("bind", "bind address (IP/hostname)").Default("localhost").Short('b').String()
+
 	portNum := kingpin.Flag("port", "port to listen on").Default("8005").Short('p').Int()
+
 	taskPortsHelp := "comma-separated list (length of `count`) of ports to use for spawned processes"
 	taskPortsRaw := kingpin.Flag("innerPorts", taskPortsHelp).Short('P').String()
 
+	tsrHelp := fmt.Sprintf("logic to use for selecting which spawned process should receive the request: %d for sequential, %d for random", int(TSM_SEQUENTIAL), int(TSM_RANDOMIZED))
+	taskSwitchRaw := kingpin.Flag("taskSwitchLogic", tsrHelp).Default(TSM_SEQUENTIAL.String()).Short('s').Int()
+
+	minWait := kingpin.Flag("minWait", "the shortest (in ms) a request should be delayed").Default("0").Short('w').Int()
+	maxWait := kingpin.Flag("maxWait", "the longest (in ms) a request should be delayed").Default("2500").Short('W').Int()
+
 	task := getTaskCmd(kingpin.Arg("command", "task to shuffle"))
 
-	kingpin.Version("0.0.0.0")
+	kingpin.Version("0.0")
 	kingpin.Parse()
 
-	taskPorts := []int{}
+	config.http.address = *bindTo
+	config.http.port = *portNum
+	config.taskSwitch = TaskSwitchMethod(*taskSwitchRaw)
 
-	taskPortsSlice := strings.Split(*taskPortsRaw, ",")
+	var taskPortsSlice []string
+
+	if len(*taskPortsRaw) > 0 {
+		taskPortsSlice = strings.Split(*taskPortsRaw, ",")
+
+		if len(taskPortsSlice) > *runCount {
+			log.Fatal("More ports defined than task runners allowed by runCount")
+			os.Exit(1)
+		}
+	} else {
+		for i := 1; i <= *runCount; i++ {
+			taskPortsSlice = append(taskPortsSlice, fmt.Sprintf("%d", i+config.http.port))
+		}
+	}
 
 	for _, port := range taskPortsSlice {
 		if len(port) >= 1 {
@@ -38,11 +94,10 @@ func main() {
 				os.Exit(1)
 			}
 
-			taskPorts = append(taskPorts, newVal)
+			task := TaskRunner{newVal, *task, time.Duration(*minWait) * time.Millisecond, time.Duration(*maxWait) * time.Millisecond}
+			config.tasks = append(config.tasks, task)
 		}
 	}
-
-	fmt.Printf("%v%v%v%v  %v\n", *runCount, *bindTo, *portNum, taskPorts, *task)
 
 	r := httprouter.New()
 	r.GET("/*path", Shuffler)
