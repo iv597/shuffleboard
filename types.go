@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"time"
 )
 
 type taskCommandLine []string
@@ -39,6 +40,7 @@ type Config struct {
 }
 
 type TaskRunner struct {
+	runs    int
 	http    HttpConfig
 	command taskCommandLine
 	minWait time.Duration

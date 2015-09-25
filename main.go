@@ -33,8 +33,8 @@ func main() {
 
 	taskAddress := kingpin.Flag("taskAddress", "address the spawned tasks are listening on").Default("localhost").Short('a').String()
 
-	tsrHelp := fmt.Sprintf("logic to use for selecting which spawned process should receive the request: %d for sequential, %d for random", int(TSM_SEQUENTIAL), int(TSM_RANDOMIZED))
-	taskSwitchRaw := kingpin.Flag("taskSwitchLogic", tsrHelp).Default(TSM_SEQUENTIAL.String()).Short('s').Int()
+	tsrHelp := fmt.Sprintf("logic to use for selecting which spawned process should receive the request: %d for sequential, %d for random (NOT IMPLEMENTED)", int(TSM_SEQUENTIAL), int(TSM_RANDOMIZED))
+	taskSwitchRaw := kingpin.Flag("taskSwitchLogic", tsrHelp).Default(TSM_RANDOMIZED.String()).Short('s').Int()
 
 	minWait := kingpin.Flag("minWait", "the shortest (in ms) a request should be delayed").Default("0").Short('w').Int()
 	maxWait := kingpin.Flag("maxWait", "the longest (in ms) a request should be delayed").Default("2500").Short('W').Int()
@@ -72,7 +72,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			task := TaskRunner{HttpConfig{*taskAddress, newVal}, *task, time.Duration(*minWait) * time.Millisecond, time.Duration(*maxWait) * time.Millisecond}
+			task := TaskRunner{0, HttpConfig{*taskAddress, newVal}, *task, time.Duration(*minWait) * time.Millisecond, time.Duration(*maxWait) * time.Millisecond}
 			config.tasks = append(config.tasks, task)
 		}
 	}

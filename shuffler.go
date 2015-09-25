@@ -3,12 +3,34 @@ package main
 import (
 	"fmt"
 	"github.com/julienschmidt/httprouter"
+	"math"
+	"math/rand"
 	"net/http"
 	"time"
 )
 
+// pulled from https://gist.github.com/DavidVaini/10308388#gistcomment-1391788
+func round(f float64) int {
+	return int(math.Floor(f + .5))
+}
+
+func nextRunner() int {
+	if config.taskSwitch == TSM_RANDOMIZED {
+		return round(rand.Float64() * float64(len(config.tasks)))
+	}
+
+	return 0 // for now, not implemented TODO
+}
+
 func Shuffler(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
-	fmt.Printf("[child 1, 200ms] %v\n", p.ByName("path"))
-	time.Sleep(200 * time.Millisecond)
+	runner := nextRunner()
+
+	minDelay := int(config.tasks[runner].minWait)
+	maxDelay := int(config.tasks[runner].maxWait)
+
+	delay := time.Duration(rand.Intn(maxDelay-minDelay) + minDelay)
+
+	fmt.Printf("[child %d, %dms] %v\n", runner, (delay / time.Millisecond), p.ByName("path"))
+	time.Sleep(delay)
 	fmt.Fprintf(w, "%v\n", config)
 }
