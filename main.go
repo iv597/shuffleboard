@@ -13,34 +13,10 @@ import (
 	"time"
 )
 
-type TaskSwitchMethod int
-
-func (t TaskSwitchMethod) String() string {
-	return fmt.Sprintf("%d", int(t))
-}
-
 const (
 	TSM_SEQUENTIAL TaskSwitchMethod = iota
 	TSM_RANDOMIZED
 )
-
-type Config struct {
-	taskSwitch TaskSwitchMethod
-	tasks      []TaskRunner
-	http       HttpConfig
-}
-
-type TaskRunner struct {
-	port    int
-	command taskCommandLine
-	minWait time.Duration
-	maxWait time.Duration
-}
-
-type HttpConfig struct {
-	address string
-	port    int
-}
 
 var config Config
 
@@ -54,6 +30,8 @@ func main() {
 
 	taskPortsHelp := "comma-separated list (length of `count`) of ports to use for spawned processes"
 	taskPortsRaw := kingpin.Flag("innerPorts", taskPortsHelp).Short('P').String()
+
+	taskAddress := kingpin.Flag("taskAddress", "address the spawned tasks are listening on").Default("localhost").Short('a').String()
 
 	tsrHelp := fmt.Sprintf("logic to use for selecting which spawned process should receive the request: %d for sequential, %d for random", int(TSM_SEQUENTIAL), int(TSM_RANDOMIZED))
 	taskSwitchRaw := kingpin.Flag("taskSwitchLogic", tsrHelp).Default(TSM_SEQUENTIAL.String()).Short('s').Int()
@@ -94,7 +72,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			task := TaskRunner{newVal, *task, time.Duration(*minWait) * time.Millisecond, time.Duration(*maxWait) * time.Millisecond}
+			task := TaskRunner{HttpConfig{*taskAddress, newVal}, *task, time.Duration(*minWait) * time.Millisecond, time.Duration(*maxWait) * time.Millisecond}
 			config.tasks = append(config.tasks, task)
 		}
 	}
