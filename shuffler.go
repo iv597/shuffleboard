@@ -7,8 +7,11 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"regexp"
 	"time"
 )
+
+var routePrefixRegex = regexp.MustCompile("http:\/\/(.*)\/")
 
 func nextRunner() int {
 	if len(config.tasks) == 1 {
@@ -35,6 +38,8 @@ func Shuffler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	upUrl := fmt.Sprintf("http://%s:%d%s", config.tasks[runner].http.address, config.tasks[runner].http.port, p.ByName("path"))
 
+	log.Printf("[runner: %d] [delay: %dms] %s %s", runner, delay/time.Millisecond, r.Method, upUrl)
+
 	time.Sleep(delay)
 
 	req, err := http.NewRequest(r.Method, upUrl, r.Body)
@@ -50,28 +55,28 @@ func Shuffler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		req.AddCookie(cookie)
 	}
 
-	reqSentTime := time.Now()
-
+	// use this rather than a standard &client.Do() so redirects aren't followed
+	// http://play.golang.org/p/mbtcF2mJai
 	resp, err := http.DefaultTransport.RoundTrip(req)
 
 	if err != nil {
-		if resp.StatusCode != 302 {
+		if resp.StatusCode == nil || resp.StatusCode != 302 {
 			panic(fmt.Sprintf("Error making request: %v", err))
 		}
 	}
 
 	for key, val := range resp.Header {
-		w.Header().Set(key, val[0])
+		if key == "Location" {
+			w.Header().Set(key, fmt.Sprintf("/%v", routePrefixRegex.ReplaceAll(val[0], ""))
+		} else {
+			w.Header().Set(key, val[0])
+		}
 	}
 
 	w.WriteHeader(resp.StatusCode)
 
 	if resp.Body != nil {
-		go func() {
-			io.Copy(w, resp.Body)
-			resp.Body.Close()
-		}()
+		io.Copy(w, resp.Body)
+		resp.Body.Close()
 	}
-
-	log.Printf("[child %d, delayed %dms, upstream %dms] %v\n", runner, (delay / time.Millisecond), time.Since(reqSentTime)/time.Millisecond, p.ByName("path"))
 }
