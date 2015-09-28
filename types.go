@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"os/exec"
 	"time"
 )
 
@@ -40,11 +41,12 @@ type Config struct {
 }
 
 type TaskRunner struct {
-	runs    int
-	http    HttpConfig
-	command taskCommandLine
-	minWait time.Duration
-	maxWait time.Duration
+	runs     int
+	http     HttpConfig
+	command  taskCommandLine
+	instance *exec.Cmd
+	minWait  time.Duration
+	maxWait  time.Duration
 }
 
 type HttpConfig struct {

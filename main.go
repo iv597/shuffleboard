@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -38,10 +39,12 @@ func main() {
 	minWait := kingpin.Flag("minWait", "the shortest (in ms) a request should be delayed").Default("0").Short('w').Int()
 	maxWait := kingpin.Flag("maxWait", "the longest (in ms) a request should be delayed").Default("2500").Short('W').Int()
 
-	task := getTaskCmd(kingpin.Arg("command", "task to shuffle"))
+	taskRaw := getTaskCmd(kingpin.Arg("command", "task to shuffle"))
 
 	kingpin.Version("0.0")
 	kingpin.Parse()
+
+	task := *taskRaw
 
 	config.http.address = *bindTo
 	config.http.port = *portNum
@@ -62,16 +65,30 @@ func main() {
 		}
 	}
 
-	for _, port := range taskPortsSlice {
+	for i, port := range taskPortsSlice {
 		if len(port) >= 1 {
-			newVal, err := strconv.Atoi(port)
+			newPort, err := strconv.Atoi(port)
 
 			if err != nil {
 				log.Fatal(err)
 				os.Exit(1)
 			}
 
-			task := TaskRunner{0, HttpConfig{*taskAddress, newVal}, *task, time.Duration(*minWait) * time.Millisecond, time.Duration(*maxWait) * time.Millisecond}
+			instance := new(exec.Cmd)
+
+			if len(task) > 0 {
+				instance := exec.Command(task[0], task[1:]...)
+				instance.Stdout = os.Stdout
+				instance.Stderr = os.Stderr
+
+				env := os.Environ()
+				env = append(env, fmt.Sprintf("PORT=%d", newPort))
+				instance.Env = env
+
+				go startTaskRunner(i, instance)
+			}
+
+			task := TaskRunner{0, HttpConfig{*taskAddress, newPort}, task, instance, time.Duration(*minWait) * time.Millisecond, time.Duration(*maxWait) * time.Millisecond}
 			config.tasks = append(config.tasks, task)
 		}
 	}
@@ -85,5 +102,16 @@ func main() {
 	r.PATCH("/*path", Shuffler)
 	r.DELETE("/*path", Shuffler)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", *bindTo, *portNum), r))
+	url := fmt.Sprintf("%s:%d", *bindTo, *portNum)
+
+	log.Printf("Starting shuffleboard with %d task runners, listening on %s", *runCount, url)
+	log.Fatal(http.ListenAndServe(url, r))
+}
+
+func startTaskRunner(id int, inst *exec.Cmd) {
+	err := inst.Run()
+
+	if err != nil {
+		log.Printf("WARN: Task %d exited with non-zero status: %v\n", id, err)
+	}
 }

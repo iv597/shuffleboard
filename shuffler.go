@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"time"
@@ -15,7 +16,8 @@ func nextRunner() int {
 	}
 
 	if config.taskSwitch == TSM_RANDOMIZED {
-		return round(rand.Float64() * float64(len(config.tasks)))
+		// the logic here is [0, n) so this is safe
+		return rand.Intn(len(config.tasks))
 	}
 
 	return 0 // for now, not implemented TODO
@@ -50,11 +52,12 @@ func Shuffler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	reqSentTime := time.Now()
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := http.DefaultTransport.RoundTrip(req)
 
 	if err != nil {
-		panic(fmt.Sprintf("Error making request: %v", err))
+		if resp.StatusCode != 302 {
+			panic(fmt.Sprintf("Error making request: %v", err))
+		}
 	}
 
 	for key, val := range resp.Header {
@@ -63,9 +66,12 @@ func Shuffler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	w.WriteHeader(resp.StatusCode)
 
-	defer resp.Body.Close()
+	if resp.Body != nil {
+		go func() {
+			io.Copy(w, resp.Body)
+			resp.Body.Close()
+		}()
+	}
 
-	io.Copy(w, resp.Body)
-
-	fmt.Printf("[child %d, delayed %dms, upstream %dms] %v\n", runner, (delay / time.Millisecond), time.Since(reqSentTime)/time.Millisecond, p.ByName("path"))
+	log.Printf("[child %d, delayed %dms, upstream %dms] %v\n", runner, (delay / time.Millisecond), time.Since(reqSentTime)/time.Millisecond, p.ByName("path"))
 }
