@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var routePrefixRegex = regexp.MustCompile("http:\/\/(.*)\/")
+var routePrefixRegex = regexp.MustCompile("http://(.*)/")
 
 func nextRunner() int {
 	if len(config.tasks) == 1 {
@@ -60,14 +60,14 @@ func Shuffler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	resp, err := http.DefaultTransport.RoundTrip(req)
 
 	if err != nil {
-		if resp.StatusCode == nil || resp.StatusCode != 302 {
+		if resp.StatusCode == 0 || resp.StatusCode != 302 {
 			panic(fmt.Sprintf("Error making request: %v", err))
 		}
 	}
 
 	for key, val := range resp.Header {
 		if key == "Location" {
-			w.Header().Set(key, fmt.Sprintf("/%v", routePrefixRegex.ReplaceAll(val[0], ""))
+			w.Header().Set(key, fmt.Sprintf("/%v", routePrefixRegex.ReplaceAllString(val[0], "")))
 		} else {
 			w.Header().Set(key, val[0])
 		}
