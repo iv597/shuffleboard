@@ -27,8 +27,6 @@ func nextRunner() int {
 }
 
 func Shuffler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	rand.Seed(time.Now().UnixNano())
-
 	runner := nextRunner()
 
 	minDelay := int(config.tasks[runner].minWait)

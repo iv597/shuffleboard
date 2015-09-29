@@ -5,6 +5,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
@@ -104,6 +105,7 @@ func main() {
 
 	url := fmt.Sprintf("%s:%d", *bindTo, *portNum)
 
+	rand.Seed(time.Now().UnixNano())
 	log.Printf("Starting shuffleboard with %d task runners, listening on %s", *runCount, url)
 	log.Fatal(http.ListenAndServe(url, r))
 }
