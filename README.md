@@ -53,5 +53,9 @@ shuffleboard -a something.local -c 4 python main.py
 
 ## Legal
 
-Shuffleboard is released by SpotOn, Inc. under the MIT License. See `LICENSE`
-for details.
+This tool was originally authored during my time at [SpotOn,
+Inc](https://www.spoton.com/). I left SpotOn in 2017 and have later found uses
+for this tool again. Contributions after 26th May 2017 were not made for SpotOn
+and are thus not copyrighted by that organization.
+
+Shuffleboard is released under the MIT License. See `LICENSE` for details.
