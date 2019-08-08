@@ -1,4 +1,6 @@
 # Shuffleboard
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fklardotsh%2Fshuffleboard.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fklardotsh%2Fshuffleboard?ref=badge_shield)
+
 
 Meet Shuffleboard. Shuffleboard likes to break your async code that forgot to
 account for AJAX requests not necessarily returning in the order they were sent
@@ -59,3 +61,7 @@ for this tool again. Contributions after 26th May 2017 were not made for SpotOn
 and are thus not copyrighted by that organization.
 
 Shuffleboard is released under the MIT License. See `LICENSE` for details.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fklardotsh%2Fshuffleboard.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fklardotsh%2Fshuffleboard?ref=badge_large)
